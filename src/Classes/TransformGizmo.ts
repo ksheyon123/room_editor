@@ -53,13 +53,21 @@ export class TransformGizmo {
 
     // 화살표 몸통 (원기둥)
     const shaftGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8);
-    const shaftMaterial = new THREE.MeshBasicMaterial({ color });
+    const shaftMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.5,
+    });
     const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
     shaft.position.y = 0.4;
 
     // 화살표 머리 (원뿔)
     const headGeometry = new THREE.ConeGeometry(0.06, 0.2, 8);
-    const headMaterial = new THREE.MeshBasicMaterial({ color });
+    const headMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.5,
+    });
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 0.9;
 
@@ -153,8 +161,9 @@ export class TransformGizmo {
       arrow.children.forEach((child) => {
         if (child instanceof THREE.Mesh) {
           const material = child.material as THREE.MeshBasicMaterial;
+          // hover된 축은 opacity 1.0, 나머지는 0.5
           material.opacity = axis === arrowKey ? 1.0 : 0.5;
-          material.transparent = axis !== arrowKey;
+          material.transparent = true;
         }
       });
     });
@@ -172,23 +181,12 @@ export class TransformGizmo {
     this.selectedAxis = axis;
     this.objectStartPosition.copy(objectPosition);
 
-    // 축 방향 벡터 가져오기
-    const axisDirection = this.getAxisDirection(axis);
-
-    // 카메라 시선 벡터
+    // 카메라 시선 방향을 평면의 법선으로 사용
     const viewDirection = new THREE.Vector3();
     this.camera.getWorldDirection(viewDirection);
 
-    // 드래그 평면 설정 (축 방향과 시선 방향으로 정의되는 평면)
-    const planeNormal = new THREE.Vector3();
-    planeNormal.crossVectors(axisDirection, viewDirection).normalize();
-
-    // 평면이 정의되지 않으면 (축과 시선이 평행) 대체 평면 사용
-    if (planeNormal.length() < 0.001) {
-      planeNormal.set(0, 1, 0); // Y축을 기본 법선으로
-    }
-
-    this.dragPlane.setFromNormalAndCoplanarPoint(planeNormal, objectPosition);
+    // 카메라 방향에 수직인 평면 생성 (Sphere 위치를 지나감)
+    this.dragPlane.setFromNormalAndCoplanarPoint(viewDirection, objectPosition);
 
     // 드래그 시작점 계산
     raycaster.ray.intersectPlane(this.dragPlane, this.dragStartPoint);

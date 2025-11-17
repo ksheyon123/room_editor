@@ -71,9 +71,7 @@ export default function Home() {
         handleSphereSelection(s, isSelected);
       });
 
-      sphere.onHover((s, isHovering) => {
-        console.log("Sphere 호버:", isHovering);
-      });
+      // sphere.onHover((s, isHovering) => {});
     };
 
     // 초기 Sphere 이벤트 등록 및 Scene에 추가
@@ -92,8 +90,8 @@ export default function Home() {
       if (gizmoIntersects.length > 0) {
         const clickedGizmo = gizmoIntersects[0].object;
         const axis = clickedGizmo.userData.axis as "x" | "y" | "z";
-        if (axis) {
-          gizmo.startDrag(axis, raycaster, sphere.getPosition());
+        if (axis && selectedSphere) {
+          gizmo.startDrag(axis, raycaster, selectedSphere?.getPosition());
           controls.enabled = false; // OrbitControls 비활성화
           return true; // Gizmo 클릭됨
         }
