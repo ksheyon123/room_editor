@@ -20,6 +20,7 @@ export class TransformGizmo {
   private dragPlane: THREE.Plane;
   private dragStartPoint: THREE.Vector3;
   private objectStartPosition: THREE.Vector3;
+  private dragStartScreenY: number = 0; // Z축 드래그용 마우스 Y 좌표
 
   // 콜백
   private onDragCallback?: (position: THREE.Vector3) => void;
@@ -175,58 +176,74 @@ export class TransformGizmo {
   public startDrag(
     axis: "x" | "y" | "z",
     raycaster: THREE.Raycaster,
-    objectPosition: THREE.Vector3
+    objectPosition: THREE.Vector3,
+    mouseScreenY?: number
   ): void {
     this.isDragging = true;
     this.selectedAxis = axis;
     this.objectStartPosition.copy(objectPosition);
 
-    // 카메라 시선 방향
-    const viewDirection = new THREE.Vector3();
-    this.camera.getWorldDirection(viewDirection);
-
-    let planeNormal: THREE.Vector3;
-
-    // Z축만 특별 처리 (카메라 시선과 평행하므로)
     if (axis === "z") {
-      // Z축: 카메라 up 방향을 평면 법선으로 사용
-      planeNormal = new THREE.Vector3(0, 1, 0);
-      planeNormal.applyQuaternion(this.camera.quaternion);
+      // Z축: 마우스 스크린 Y 좌표 저장 (마우스 이동량 기반)
+      this.dragStartScreenY = mouseScreenY || 0;
     } else {
-      // X, Y축: 카메라 방향에 수직인 평면 사용 (기존 방식)
-      planeNormal = viewDirection.clone();
+      // X, Y축: 기존 레이캐스팅 방식
+      const viewDirection = new THREE.Vector3();
+      this.camera.getWorldDirection(viewDirection);
+
+      // 카메라 방향에 수직인 평면 사용
+      const planeNormal = viewDirection.clone();
+
+      // 드래그 평면 설정 (객체 위치를 지나감)
+      this.dragPlane.setFromNormalAndCoplanarPoint(planeNormal, objectPosition);
+
+      // 드래그 시작점 계산
+      raycaster.ray.intersectPlane(this.dragPlane, this.dragStartPoint);
     }
-
-    // 드래그 평면 설정 (객체 위치를 지나감)
-    this.dragPlane.setFromNormalAndCoplanarPoint(planeNormal, objectPosition);
-
-    // 드래그 시작점 계산
-    raycaster.ray.intersectPlane(this.dragPlane, this.dragStartPoint);
   }
 
   /**
    * 드래그 중
    */
-  public onDrag(raycaster: THREE.Raycaster): THREE.Vector3 | null {
+  public onDrag(
+    raycaster: THREE.Raycaster,
+    mouseScreenY?: number
+  ): THREE.Vector3 | null {
     if (!this.isDragging || !this.selectedAxis) return null;
 
-    const currentPoint = new THREE.Vector3();
-    raycaster.ray.intersectPlane(this.dragPlane, currentPoint);
+    if (this.selectedAxis === "z") {
+      // Z축: 마우스 Y 이동량 기반
+      const currentScreenY = mouseScreenY || 0;
+      const deltaY = this.dragStartScreenY - currentScreenY; // 위로 = 양수
+      const sensitivity = 0.01; // 조정 가능한 민감도
 
-    // 이동 벡터 계산
-    const moveVector = new THREE.Vector3();
-    moveVector.subVectors(currentPoint, this.dragStartPoint);
+      const axisDirection = this.getAxisDirection("z");
+      const move = axisDirection.clone().multiplyScalar(deltaY * sensitivity);
 
-    // 축 방향으로만 투영
-    const axisDirection = this.getAxisDirection(this.selectedAxis);
-    const projection = moveVector.dot(axisDirection);
-    const constrainedMove = axisDirection.clone().multiplyScalar(projection);
+      const newPosition = new THREE.Vector3();
+      newPosition.addVectors(this.objectStartPosition, move);
 
-    // 새로운 위치 계산
-    const newPosition = new THREE.Vector3();
-    newPosition.addVectors(this.objectStartPosition, constrainedMove);
+      return newPosition;
+    } else {
+      // X, Y축: 기존 레이캐스팅 방식
+      const currentPoint = new THREE.Vector3();
+      raycaster.ray.intersectPlane(this.dragPlane, currentPoint);
 
-    return newPosition;
+      // 이동 벡터 계산
+      const moveVector = new THREE.Vector3();
+      moveVector.subVectors(currentPoint, this.dragStartPoint);
+
+      // 축 방향으로만 투영
+      const axisDirection = this.getAxisDirection(this.selectedAxis);
+      const projection = moveVector.dot(axisDirection);
+      const constrainedMove = axisDirection.clone().multiplyScalar(projection);
+
+      // 새로운 위치 계산
+      const newPosition = new THREE.Vector3();
+      newPosition.addVectors(this.objectStartPosition, constrainedMove);
+
+      return newPosition;
+    }
   }
 
   /**

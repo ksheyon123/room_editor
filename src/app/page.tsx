@@ -28,14 +28,14 @@ export default function Home() {
 
     // Sphere 배열 관리
     const spheres: Sphere[] = [];
-    const tempSphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.1, 0xff00ff);
+    const tempSphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.2, 0xff00ff);
     let tempSphereVisible = false;
     let multiSphereMode = false;
     let selectedSphere: Sphere | null = null;
     let clickedSphereForMulti: Sphere | null = null;
 
     // 초기 Sphere 생성
-    const sphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.1, 0x00aaff);
+    const sphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.2, 0x00aaff);
     spheres.push(sphere);
 
     // TransformGizmo 생성
@@ -85,13 +85,19 @@ export default function Home() {
     // ===== D. 이벤트 핸들러 분리 및 명확화 =====
     // Gizmo 클릭 처리
     const handleGizmoClick = (
-      gizmoIntersects: THREE.Intersection[]
+      gizmoIntersects: THREE.Intersection[],
+      mouseY: number
     ): boolean => {
       if (gizmoIntersects.length > 0) {
         const clickedGizmo = gizmoIntersects[0].object;
         const axis = clickedGizmo.userData.axis as "x" | "y" | "z";
         if (axis && selectedSphere) {
-          gizmo.startDrag(axis, raycaster, selectedSphere?.getPosition());
+          gizmo.startDrag(
+            axis,
+            raycaster,
+            selectedSphere?.getPosition(),
+            mouseY
+          );
           controls.enabled = false; // OrbitControls 비활성화
           return true; // Gizmo 클릭됨
         }
@@ -148,7 +154,7 @@ export default function Home() {
       // Multi Sphere 모드일 때
       if (multiSphereMode) {
         // 현재 임시 Sphere 위치에 실제 Sphere 생성
-        const newSphere = new Sphere(tempSphere.getPosition(), 0.5, 0x00aaff);
+        const newSphere = new Sphere(tempSphere.getPosition(), 0.2, 0x00aaff);
         setupSphereEvents(newSphere);
         spheres.push(newSphere);
         scene.add(newSphere.getObject());
@@ -180,7 +186,7 @@ export default function Home() {
         const gizmoMeshes = gizmo.getMeshes();
         const gizmoIntersects = raycaster.intersectObjects(gizmoMeshes);
 
-        if (handleGizmoClick(gizmoIntersects)) {
+        if (handleGizmoClick(gizmoIntersects, event.clientY)) {
           return; // Gizmo 클릭 시 다른 처리 안함
         }
       }
@@ -228,7 +234,7 @@ export default function Home() {
 
       // 드래그 중이면 객체 이동
       if (gizmo.getIsDragging() && selectedSphere) {
-        const newPosition = gizmo.onDrag(raycaster);
+        const newPosition = gizmo.onDrag(raycaster, event.clientY);
         if (newPosition) {
           selectedSphere.setPosition(newPosition);
           gizmo.updateAxesOrientation(newPosition);
