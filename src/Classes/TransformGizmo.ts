@@ -181,12 +181,24 @@ export class TransformGizmo {
     this.selectedAxis = axis;
     this.objectStartPosition.copy(objectPosition);
 
-    // 카메라 시선 방향을 평면의 법선으로 사용
+    // 카메라 시선 방향
     const viewDirection = new THREE.Vector3();
     this.camera.getWorldDirection(viewDirection);
 
-    // 카메라 방향에 수직인 평면 생성 (Sphere 위치를 지나감)
-    this.dragPlane.setFromNormalAndCoplanarPoint(viewDirection, objectPosition);
+    let planeNormal: THREE.Vector3;
+
+    // Z축만 특별 처리 (카메라 시선과 평행하므로)
+    if (axis === "z") {
+      // Z축: 카메라 up 방향을 평면 법선으로 사용
+      planeNormal = new THREE.Vector3(0, 1, 0);
+      planeNormal.applyQuaternion(this.camera.quaternion);
+    } else {
+      // X, Y축: 카메라 방향에 수직인 평면 사용 (기존 방식)
+      planeNormal = viewDirection.clone();
+    }
+
+    // 드래그 평면 설정 (객체 위치를 지나감)
+    this.dragPlane.setFromNormalAndCoplanarPoint(planeNormal, objectPosition);
 
     // 드래그 시작점 계산
     raycaster.ray.intersectPlane(this.dragPlane, this.dragStartPoint);

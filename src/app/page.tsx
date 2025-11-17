@@ -28,14 +28,14 @@ export default function Home() {
 
     // Sphere 배열 관리
     const spheres: Sphere[] = [];
-    const tempSphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.5, 0xff00ff);
+    const tempSphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.1, 0xff00ff);
     let tempSphereVisible = false;
     let multiSphereMode = false;
     let selectedSphere: Sphere | null = null;
     let clickedSphereForMulti: Sphere | null = null;
 
     // 초기 Sphere 생성
-    const sphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.5, 0x00aaff);
+    const sphere = new Sphere(new THREE.Vector3(0, 0, 0), 0.1, 0x00aaff);
     spheres.push(sphere);
 
     // TransformGizmo 생성

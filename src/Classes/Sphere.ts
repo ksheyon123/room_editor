@@ -18,7 +18,7 @@ export class Sphere {
 
   constructor(
     position: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
-    radius: number = 0.5,
+    radius: number = 0.2,
     color: number = 0x00aaff
   ) {
     this.group = new THREE.Group();
