@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { Header } from "@room-editor/components";
 import { Sphere } from "@/Classes/Sphere";
 import { TransformGizmo } from "@/Classes/TransformGizmo";
 import { useThree } from "@/contexts/ThreeContext";
@@ -370,6 +371,7 @@ export default function Home() {
 
   return (
     <div>
+      <Header />
       <div ref={containerRef} style={{ width: "100vw", height: "100vh" }} />
       <div
         style={{
